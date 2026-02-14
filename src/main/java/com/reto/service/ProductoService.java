@@ -1,7 +1,7 @@
-package com.example.demo.service;
+package com.reto.service;
 
-import com.example.demo.model.Producto;
-import com.example.demo.repository.ProductoRepository;
+import com.reto.model.Producto;
+import com.reto.repository.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
