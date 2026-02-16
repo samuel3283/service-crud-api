@@ -86,6 +86,11 @@ jobs:
 
       - name: Create or Update Service
         run: |
+          TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
+            --names aws-reto-tg \
+            --query "TargetGroups[0].TargetGroupArn" \
+            --output text)
+  
           SERVICE_EXISTS=$(aws ecs describe-services \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services ${{ env.ECS_SERVICE }} \
@@ -107,7 +112,7 @@ jobs:
               --desired-count 1 \
               --launch-type FARGATE \
               --network-configuration "awsvpcConfiguration={subnets=[${{ env.ECS_SUBNETS }}],securityGroups=[${{ env.ECS_SECURITY_GROUPS }}],assignPublicIp=ENABLED}" \
-              --load-balancers targetGroupArn=${{ env.ECS_TARGET_GROUP_ARN }},containerName=${{ env.CONTAINER_NAME }},containerPort=8080
+              --load-balancers targetGroupArn=$TARGET_GROUP_ARN,containerName=${{ env.CONTAINER_NAME }},containerPort=8080
           fi
 
 
