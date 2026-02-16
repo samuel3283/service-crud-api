@@ -17,7 +17,7 @@ env:
   ECS_TASK_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole
   #ECS_TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:us-east-1:329631044416:targetgroup/aws-reto-tg/880f84008d932cc0
   TARGET_GROUP_NAME: aws-reto-tg
-  VPC_ID: vpc-0b133687d32a90771
+  VPC_ID: vpc-05941b6a2adf1af0b
   ECS_SECURITY_GROUPS: sg-077a9cee1daa304af
   ECS_SUBNETS: subnet-09dc9dcfa5845cdfe
 
