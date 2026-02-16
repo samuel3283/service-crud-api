@@ -8,7 +8,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: service-crud-api
   ECS_CLUSTER: aws-reto-cluster
-  ECS_SERVICE: crud-reto-service
+  ECS_SERVICE: aws-reto-service
   ECS_TASK_DEFINITION: .aws/task-definition.json
   CONTAINER_NAME: service-crud-api
 
