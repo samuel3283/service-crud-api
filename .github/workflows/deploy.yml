@@ -10,7 +10,8 @@ env:
   ECS_CLUSTER: aws-reto-cluster
   ECS_SERVICE: aws-reto-service
   ECS_TASK_DEFINITION: .aws/task-definition.json
-  CONTAINER_NAME: service-crud-api
+  CONTAINER_NAME: app
+  #service-crud-api
 
 permissions:
   contents: read
