@@ -72,7 +72,7 @@ jobs:
             "containerDefinitions": [
               {
                 "name": "${{ env.CONTAINER_NAME }}",
-                "image": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG",
+                "image": nginx:latest
                 "portMappings": [
                   {
                     "containerPort": 80,
