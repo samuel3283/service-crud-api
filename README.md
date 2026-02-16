@@ -18,6 +18,7 @@ API REST CRUD simple construida con Spring Boot, dockerizada y desplegada en AWS
 - AWS ECR & ECS
 - GitHub Actions
 
+
 ## 📦 Endpoints API
 
 ### GET /api/productos
