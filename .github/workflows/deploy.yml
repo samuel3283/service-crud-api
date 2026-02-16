@@ -15,9 +15,11 @@ env:
   ECS_TASK_FAMILY: aws-reto
   ECS_EXECUTION_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole
   ECS_TASK_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole
-  ECS_TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:us-east-1:329631044416:targetgroup/aws-reto-tg/880f84008d932cc0
-  ECS_SECURITY_GROUPS: sg-0de562c880a0e3080
-  ECS_SUBNETS: subnet-0b5166f28d29dcbd6,subnet-02424b0d649ad9e30
+  #ECS_TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:us-east-1:329631044416:targetgroup/aws-reto-tg/880f84008d932cc0
+  TARGET_GROUP_NAME: aws-reto-tg
+  VPC_ID: vpc-0b133687d32a90771
+  ECS_SECURITY_GROUPS: sg-077a9cee1daa304af
+  ECS_SUBNETS: subnet-09dc9dcfa5845cdfe
 
 jobs:
   deploy:
@@ -84,18 +86,42 @@ jobs:
 
           aws ecs register-task-definition --cli-input-json file://task-definition.json
 
+
+      - name: Create Target Group if not exists (NLB)
+        run: |
+          echo "Checking if Target Group exists..."
+
+          TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
+            --names ${{ env.TARGET_GROUP_NAME }} \
+            --query "TargetGroups[0].TargetGroupArn" \
+            --output text 2>/dev/null || echo "NOT_FOUND")
+
+          if [ "$TARGET_GROUP_ARN" = "None" ] || [ "$TARGET_GROUP_ARN" = "NOT_FOUND" ]; then
+            echo "Target Group does not exist. Creating..."
+
+            TARGET_GROUP_ARN=$(aws elbv2 create-target-group \
+              --name ${{ env.TARGET_GROUP_NAME }} \
+              --protocol TCP \
+              --port 80 \
+              --vpc-id ${{ env.VPC_ID }} \
+              --target-type ip \
+              --query "TargetGroups[0].TargetGroupArn" \
+              --output text)
+
+            echo "Target Group created: $TARGET_GROUP_ARN"
+          else
+            echo "Target Group already exists: $TARGET_GROUP_ARN"
+          fi
+
+          echo "TARGET_GROUP_ARN=$TARGET_GROUP_ARN" >> $GITHUB_ENV
+
       - name: Create or Update Service
         run: |
-          TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
-            --names aws-reto-tg \
-            --query "TargetGroups[0].TargetGroupArn" \
-            --output text)
-  
           SERVICE_EXISTS=$(aws ecs describe-services \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services ${{ env.ECS_SERVICE }} \
             --query "services[0].status" \
-            --output text || echo "MISSING")
+            --output text 2>/dev/null || echo "MISSING")
 
           if [ "$SERVICE_EXISTS" = "ACTIVE" ]; then
             echo "Updating existing service..."
