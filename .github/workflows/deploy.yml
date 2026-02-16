@@ -72,7 +72,7 @@ jobs:
                 "image": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG",
                 "portMappings": [
                   {
-                    "containerPort": 8080,
+                    "containerPort": 80,
                     "protocol": "tcp"
                   }
                 ],
@@ -112,7 +112,7 @@ jobs:
               --desired-count 1 \
               --launch-type FARGATE \
               --network-configuration "awsvpcConfiguration={subnets=[${{ env.ECS_SUBNETS }}],securityGroups=[${{ env.ECS_SECURITY_GROUPS }}],assignPublicIp=ENABLED}" \
-              --load-balancers targetGroupArn=$TARGET_GROUP_ARN,containerName=${{ env.CONTAINER_NAME }},containerPort=8080
+              --load-balancers targetGroupArn=$TARGET_GROUP_ARN,containerName=${{ env.CONTAINER_NAME }},containerPort=80
           fi
 
 
