@@ -14,10 +14,10 @@ env:
   IMAGE_TAG: ${{ github.sha }}
   ECS_TASK_FAMILY: crud-api-task
   ECS_EXECUTION_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole
-  ECS_TASK_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole  
-  ECS_TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:us-east-1:329631044416:targetgroup/aws-reto-tg/045925905048526e
-  ECS_SECURITY_GROUPS: sg-06f32d75906a62974
-  ECS_SUBNETS: subnet-07167d0cb9fc3c029,subnet-0f5cf028a982347ef
+  ECS_TASK_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole
+  ECS_TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:us-east-1:329631044416:targetgroup/aws-reto-tg/80c02318cce05567
+  ECS_SECURITY_GROUPS: sg-0274d3ce3be77b260
+  ECS_SUBNETS: subnet-089dab2dea978a4e3,subnet-0ab2e6f70e4900275
 
 jobs:
   deploy:
