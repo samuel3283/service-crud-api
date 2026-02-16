@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: service-crud-api
+
+server:
+  port: 80
+
+logging:
+  level:
+    root: INFO
