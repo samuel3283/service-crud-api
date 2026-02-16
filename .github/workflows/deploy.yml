@@ -8,77 +8,107 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: service-crud-api
   ECS_CLUSTER: aws-reto-cluster
-  ECS_SERVICE: aws-reto-service
+  ECS_SERVICE: service-crud-api
   ECS_TASK_DEFINITION: .aws/task-definition.json
-  CONTAINER_NAME: app
-  #service-crud-api
-
-permissions:
-  contents: read
+  CONTAINER_NAME: service-crud-api
+  IMAGE_TAG: ${{ github.sha }}
+  ECS_TASK_FAMILY: crud-api-task
+  ECS_EXECUTION_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole
+  ECS_TASK_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole  
+  ECS_TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:us-east-1:329631044416:targetgroup/aws-reto-tg/045925905048526e
+  ECS_SECURITY_GROUPS: sg-013ac015cc768e754 
+  ECS_SUBNETS: subnet-042b15b56482db601,subnet-005479f27be7321cf
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
+  deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Build with Maven
-      run: mvn clean compile
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Run tests
-      run: mvn test
+      - name: Build JAR
+        run: mvn clean package -DskipTests
 
-    - name: Package application
-      run: mvn package -DskipTests
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Tag image
+        run: |
+          docker tag ${{ env.ECR_REPOSITORY }}:$IMAGE_TAG \
+          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Push image
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
 
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker build \
-          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-          -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-          .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-      
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: ${{ env.ECS_TASK_DEFINITION }}
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
+      - name: Register Task Definition
+        id: task-def
+        run: |
+          cat <<EOF > task-definition.json
+          {
+            "family": "${{ env.ECS_TASK_FAMILY }}",
+            "networkMode": "awsvpc",
+            "requiresCompatibilities": ["FARGATE"],
+            "cpu": "256",
+            "memory": "512",
+            "executionRoleArn": "${{ env.ECS_EXECUTION_ROLE_ARN }}",
+            "taskRoleArn": "${{ env.ECS_TASK_ROLE_ARN }}",
+            "containerDefinitions": [
+              {
+                "name": "${{ env.CONTAINER_NAME }}",
+                "image": "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG",
+                "portMappings": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "tcp"
+                  }
+                ],
+                "essential": true
+              }
+            ]
+          }
+          EOF
 
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
+          aws ecs register-task-definition --cli-input-json file://task-definition.json
+
+      - name: Create or Update Service
+        run: |
+          SERVICE_EXISTS=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query "services[0].status" \
+            --output text || echo "MISSING")
+
+          if [ "$SERVICE_EXISTS" = "ACTIVE" ]; then
+            echo "Updating existing service..."
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service ${{ env.ECS_SERVICE }} \
+              --force-new-deployment
+          else
+            echo "Creating new service..."
+            aws ecs create-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service-name ${{ env.ECS_SERVICE }} \
+              --task-definition ${{ env.ECS_TASK_FAMILY }} \
+              --desired-count 1 \
+              --launch-type FARGATE \
+              --network-configuration "awsvpcConfiguration={subnets=[${{ env.ECS_SUBNETS }}],securityGroups=[${{ env.ECS_SECURITY_GROUPS }}],assignPublicIp=ENABLED}" \
+              --load-balancers targetGroupArn=${{ env.ECS_TARGET_GROUP_ARN }},containerName=${{ env.CONTAINER_NAME }},containerPort=8080
+          fi
+
+
+
