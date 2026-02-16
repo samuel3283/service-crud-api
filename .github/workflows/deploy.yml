@@ -17,7 +17,7 @@ env:
   ECS_TASK_ROLE_ARN: arn:aws:iam::329631044416:role/ecsTaskExecutionRole  
   ECS_TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:us-east-1:329631044416:targetgroup/aws-reto-tg/045925905048526e
   ECS_SECURITY_GROUPS: sg-06f32d75906a62974
-  ECS_SUBNETS: subnet-042b15b56482db601,subnet-005479f27be7321cf
+  ECS_SUBNETS: subnet-07167d0cb9fc3c029,subnet-0f5cf028a982347ef
 
 jobs:
   deploy:
