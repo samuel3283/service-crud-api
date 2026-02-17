@@ -19,7 +19,26 @@ public class ProductoController {
     
     @GetMapping
     public List<Producto> getAllProductos() {
-        return productoService.findAll();
+
+        List<Producto> response = new ArrayList<Producto>();
+		Producto p1 = new Producto();
+		p1.setId(100100);
+		p1.setNombre("Arroz");		
+		p1.setDescripcion("Presentación de 5kg");		
+		p1.setPrecio(27.00);		
+		p1.setCantidad(50);		
+		response.add(p1);
+
+		Producto p1 = new Producto();
+		p2.setId(100200);
+		p2.setNombre("Azucar");		
+		p2.setDescripcion("Presentación de 3kg");		
+		p2.setPrecio(18.00);		
+		p2.setCantidad(60);		
+		response.add(p2);
+
+        //return productoService.findAll();
+        return response;
     }
     
     @GetMapping("/{id}")
