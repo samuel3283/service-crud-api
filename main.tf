@@ -28,7 +28,7 @@ resource "aws_ecs_task_definition" "my_first_task" {
 }
 
 resource "aws_iam_role" "ecsTaskExecutionRole" {
-  name               = "ecsTaskExecutionRole-${var.name_service"
+  name               = "ecsTaskExecutionRole-${var.name_service}"
   assume_role_policy = "${data.aws_iam_policy_document.assume_role_policy.json}"
 }
 
@@ -48,7 +48,7 @@ resource "aws_iam_role_policy_attachment" "ecsTaskExecutionRole_policy" {
 }
 
 resource "aws_lb_target_group" "target_group" {
-  name        = "target-group-${var.name_service"
+  name        = "target-group-${var.name_service}"
   port        = 3000
   protocol    = "TCP"        # 🔥 NLB usa TCP
   target_type = "ip"         # 🔥 obligatorio para Fargate
