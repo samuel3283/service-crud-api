@@ -1,6 +1,6 @@
 [
 {
-      "name": "task-crud-api",
+      "name": "task-service-crud-api",
       "image": "329631044416.dkr.ecr.us-east-1.amazonaws.com/service-crud-api:latest",
       "essential": true,
       "portMappings": [
