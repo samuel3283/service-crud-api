@@ -29,7 +29,7 @@ public class ProductoController {
 		p1.setCantidad(50);		
 		response.add(p1);
 
-		Producto p1 = new Producto();
+		Producto p2 = new Producto();
 		p2.setId(100200);
 		p2.setNombre("Azucar");		
 		p2.setDescripcion("Presentación de 3kg");		
