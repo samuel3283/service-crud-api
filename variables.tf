@@ -20,11 +20,6 @@ variable "vpc_id" {
   description = "VPC ID"
 }
 
-variable "aws_key_pair_name" {
-  type        = string
-  description = "AWS Key Pair Name"
-}
-
 variable "name_task" {
   type = string
   description = "Name Task of ECS"
