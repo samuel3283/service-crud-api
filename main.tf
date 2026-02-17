@@ -49,7 +49,7 @@ resource "aws_iam_role_policy_attachment" "ecsTaskExecutionRole_policy" {
 
 resource "aws_lb_target_group" "target_group" {
   name        = "target-group-${var.name_service}"
-  port        = 3000
+  port        = var.port
   protocol    = "TCP"        # 🔥 NLB usa TCP
   target_type = "ip"         # 🔥 obligatorio para Fargate
   vpc_id      = var.vpc_id
@@ -58,7 +58,7 @@ resource "aws_lb_target_group" "target_group" {
 
 resource "aws_lb_listener" "listener" {
   load_balancer_arn = var.arn_load_balancer  # ARN de tu NLB
-  port              = 3000
+  port              = var.port
   protocol          = "TCP"
 
   default_action {

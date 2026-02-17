@@ -45,6 +45,11 @@ variable "name_load_balancer" {
   description = "Name Load Balancer"
 }
 
+variable "port" {
+  type        = string
+  description = "Puerto Load Balancer"
+}
+
 variable "type_load_balancer" {
   type        = string
   description = "Type Load Balancer"

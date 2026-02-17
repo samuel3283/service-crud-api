@@ -8,5 +8,6 @@ name_cluster_ecs  = "aws-reto-cluster"
 name_load_balancer= "aws-reto-nlb"
 type_load_balancer= "network"
 target_group 	  = "target-group-crud-api"
+port              = "8080"             
 
 
