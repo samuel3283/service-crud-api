@@ -18,7 +18,7 @@ provider "aws" {
 }
 
 resource "aws_ecs_task_definition" "my_first_task" {
-  family                   = "task-frontend-node"
+  family                   = "task-${var.name_service}"
   container_definitions = file("./task-definitions/service.json")
   requires_compatibilities = ["FARGATE"] # Stating that we are using ECS Fargate
   network_mode             = "awsvpc"    # Using awsvpc as our network mode as this is required for Fargate
