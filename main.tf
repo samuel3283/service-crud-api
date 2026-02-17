@@ -2,13 +2,13 @@
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "2.70.0"
+      version = "5.0"
     }
   }
-
+  #version = "2.70.0"
   backend "s3" {
     bucket = "storage-iac-reto"
-    key    = "dev/app-aws-terraform-reto.tfstate"
+    key    = "dev/service-crud-api.tfstate"
     region = "us-east-1"
   }
 }
@@ -16,13 +16,6 @@
 provider "aws" {
   region     = var.aws_region
 }
-
-/*
-resource "aws_ecr_repository" "ecr_repo" {
-  name = "ecr-repo"
-}
-*/
-
 
 resource "aws_ecs_task_definition" "my_first_task" {
   family                   = "task-frontend-node"
@@ -54,45 +47,50 @@ resource "aws_iam_role_policy_attachment" "ecsTaskExecutionRole_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-
-/* */
 resource "aws_lb_target_group" "target_group" {
   name        = "target-group-node-002"
   port        = 3000
-  protocol    = "HTTP"
-  target_type = "ip"
+  protocol    = "TCP"        # 🔥 NLB usa TCP
+  target_type = "ip"         # 🔥 obligatorio para Fargate
   vpc_id      = var.vpc_id
-  #depends_on = [aws_alb.application_load_balancer]  
+
+}
+
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = var.arn_load_balancer  # ARN de tu NLB
+  port              = 3000
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.target_group.arn
+  }
 }
 
 
-resource "aws_lb_listener" "listener" {
-  load_balancer_arn = var.arn_load_balancer
-  port              = "3000"
-  protocol          = "HTTP"
-  default_action {
-    type             = "forward"
-    target_group_arn = "${aws_lb_target_group.target_group.arn}" # Referencing our tagrte group
-  }
+data "aws_ecs_cluster" "cluster" {
+  cluster_name = "aws-reto-cluster"
 }
 
 resource "aws_ecs_service" "my_first_service" {
   name            = var.name_service
-  cluster         = "cluster-lab-ecs"
-  task_definition = "${aws_ecs_task_definition.my_first_task.arn}" # Referencing the task our service will spin up
+  cluster         = data.aws_ecs_cluster.cluster.id
+  task_definition = aws_ecs_task_definition.my_first_task.arn
   launch_type     = "FARGATE"
-  desired_count   = 2 # Setting the number of containers to 3
-  #depends_on = [aws_lb_listener.listener]
+  desired_count   = 2
+
+  depends_on = [aws_lb_listener.listener]
 
   load_balancer {
-    target_group_arn = "${aws_lb_target_group.target_group.arn}" 
+    target_group_arn = aws_lb_target_group.target_group.arn
+    #container_name   = "service-name-dentro-del-task"  # ⚠️ importante
     container_name   = "${aws_ecs_task_definition.my_first_task.family}"
-    container_port   = 3000 # Specifying the container port
+    container_port   = 3000
   }
 
   network_configuration {
-    subnets          = [ "subnet-08063edc21a996fb6","subnet-0470f753f16c4958a","subnet-0412b98279eccb694"]
-    assign_public_ip = true   
-    security_groups  = [var.security_group] 
+    subnets          = ["subnet-076382280f9e7ea51","subnet-005671e664ea149fc"]
+    assign_public_ip = true
+    security_groups  = [var.security_group]
   }
 }
