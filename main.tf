@@ -83,9 +83,8 @@ resource "aws_ecs_service" "my_first_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.target_group.arn
-    #container_name   = "service-name-dentro-del-task"  # ⚠️ importante
     container_name   = "${aws_ecs_task_definition.my_first_task.family}"
-    container_port   = 3000
+    container_port   = var.port
   }
 
   network_configuration {
